@@ -1,0 +1,14 @@
+### Health check
+GET http://localhost:7071/api/health
+
+### B016 workflow navigation
+POST http://localhost:7071/api/workflow/navigation
+Content-Type: application/json
+
+{
+  "requestId": "00000000-0000-0000-0000-000000000001",
+  "loginUserId": "00000000-0000-0000-0000-000000000002",
+  "routingSetId": "00000000-0000-0000-0000-000000000003",
+  "applicationIdOrUrl": null,
+  "isPortal": false
+}

@@ -1,0 +1,467 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "tps_dataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "38f79a4b-df3b-46a1-85fa-258f61c8b784"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "userId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "入力を指定してください",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "roleId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "入力を指定してください",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_2": {
+                  "title": "accountId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "入力を指定してください",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "変数を初期化する-userList": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "7c220f33-a46d-4495-9bc6-99a6566311c9"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "userList",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "正常応答": {
+          "runAfter": {
+            "try": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c49b51a8-6f4b-4d54-897d-12dfae6079eb"
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 200,
+            "body": "@variables('userList')",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tps_pageswebroru_mst_ibmid": {
+                    "type": "string"
+                  },
+                  "tps_webrorumei": {
+                    "type": "string"
+                  },
+                  "contactid": {
+                    "type": "string"
+                  },
+                  "fullname": {
+                    "type": "string"
+                  },
+                  "emailaddress": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tps_pageswebroru_mst_ibmid",
+                  "tps_webrorumei",
+                  "contactid",
+                  "fullname",
+                  "emailaddress"
+                ]
+              }
+            }
+          }
+        },
+        "正常終了": {
+          "runAfter": {
+            "正常応答": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8108b9d6-7be9-4dbb-9f8d-2e8d0767ca3e"
+          },
+          "type": "Terminate",
+          "inputs": {
+            "runStatus": "Succeeded"
+          }
+        },
+        "エラーメッセージを取得する": {
+          "runAfter": {
+            "try": [
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f90521b8-6fbc-418f-b879-06316ebe1dc1"
+          },
+          "type": "Query",
+          "inputs": {
+            "from": "@result('try')",
+            "where": "@equals(item()?['status'], 'Failed')"
+          }
+        },
+        "異常終了": {
+          "runAfter": {
+            "異常応答": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b541ada9-bcc2-4e50-9f4a-82f370a9f64b"
+          },
+          "type": "Terminate",
+          "inputs": {
+            "runStatus": "Failed"
+          }
+        },
+        "異常応答": {
+          "runAfter": {
+            "エラーメッセージを取得する": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c49b51a8-6f4b-4d54-897d-12dfae6079eb"
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 400,
+            "body": {
+              "フロー名": "@{workflow()?['tags']?['flowDisplayName']}",
+              "エラーメッセージ": "@{first(body('エラーメッセージを取得する'))?['error']?['message']}"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "フロー名": {
+                  "title": "フロー名",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                },
+                "エラーメッセージ": {
+                  "title": "エラーメッセージ",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "try": {
+          "actions": {
+            "パラメータ「roleId」と「userId」のいずれか値があるかを判断": {
+              "actions": {
+                "パラメータ「roleId」が空白かどうかを判定": {
+                  "actions": {
+                    "パラメータ「accountd」が空かどうかを判定": {
+                      "actions": {
+                        "パラメータ「WebロールId(roleId)」により、所属するユーザー一覧を取得する": {
+                          "runAfter": {},
+                          "metadata": {
+                            "operationMetadataId": "aaa57bb0-009e-467e-9abb-63da7350dc6d"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connectionName": "shared_commondataserviceforapps_1",
+                              "operationId": "ListRecords",
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                            },
+                            "parameters": {
+                              "entityName": "tps_pageswebroru_mst_ibms",
+                              "fetchXml": "<!--\nCreated from query:\n\nSELECT TOP 50 tps_pageswebroru_mst_ibmid,\n              tps_webrorumei,\n              contact_r.contactid,\n              contact_r.fullname,\n              contact_r.emailaddress1,\n              contact.contactid,\n              contact.fullname,\n              contact.emailaddress1\nFROM   tps_pageswebroru_mst_ibm\n       INNER JOIN\n       tps_pageswebroru_mst_ibm_contact AS contact_r\n       ON contact_r.tps_pageswebroru_mst_ibmid = tps_pageswebroru_mst_ibm.tps_pageswebroru_mst_ibmid\n       INNER JOIN\n       contact AS contact\n       ON contact.contactid = contact_r.contactid\n       And statecode = 0\nWHERE  tps_pageswebroru_mst_ibmid in ('75ca01f0-0227-ef11-840b-000d3a7894bd','5faf3d4c-c627-ef11-840a-00224866de73') and statecode=0;\n-->\n\n<fetch>\n  <entity name=\"tps_pageswebroru_mst_ibm\">\n    <attribute name=\"tps_pageswebroru_mst_ibmid\" />\n    <attribute name=\"tps_webrorumei\" />\n    <filter>\n      <condition attribute=\"tps_pageswebroru_mst_ibmid\" operator=\"in\">\n @{concat('<value>', replace(trim(triggerBody()?['text_1']), ',', '</value> <value>'), '</value>')}\n      </condition>\n      <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n    </filter>\n    <link-entity name=\"tps_pageswebroru_mst_ibm_contact\" from=\"tps_pageswebroru_mst_ibmid\" to=\"tps_pageswebroru_mst_ibmid\" link-type=\"inner\" alias=\"contact_r\" intersect=\"true\">\n      <link-entity name=\"contact\" from=\"contactid\" to=\"contactid\" alias=\"contact\" intersect=\"true\">\n        <attribute name=\"contactid\" />\n        <attribute name=\"fullname\" />\n        <attribute name=\"emailaddress1\" />\n        <filter>\n          <condition attribute=\"tps_shoninsutetasu\" operator=\"eq\" value=\"2\" />\n          <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n        </filter>\n      </link-entity>\n    </link-entity>\n  </entity>\n</fetch>"
+                            },
+                            "authentication": "@parameters('$authentication')"
+                          }
+                        },
+                        "配列作成-userList-roleId": {
+                          "runAfter": {
+                            "パラメータ「WebロールId(roleId)」により、所属するユーザー一覧を取得する": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "bfe8e633-b4b1-4893-87d7-8a07d2d30198"
+                          },
+                          "type": "Select",
+                          "inputs": {
+                            "from": "@outputs('パラメータ「WebロールId(roleId)」により、所属するユーザー一覧を取得する')?['body/value']",
+                            "select": {
+                              "contactid": "@item()?['contact.contactid']",
+                              "fullname": "@item()?['contact.fullname']",
+                              "emailaddress": "@item()?['contact.emailaddress1']",
+                              "tps_pageswebroru_mst_ibmid": "@item()?['tps_pageswebroru_mst_ibmid']",
+                              "tps_webrorumei": "@item()?['tps_webrorumei']"
+                            }
+                          }
+                        },
+                        "変数の設定-userList-roleId": {
+                          "runAfter": {
+                            "配列作成-userList-roleId": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "478dae22-dddf-4eb2-9d0e-51cf966e530a"
+                          },
+                          "type": "SetVariable",
+                          "inputs": {
+                            "name": "userList",
+                            "value": "@body('配列作成-userList-roleId')"
+                          }
+                        }
+                      },
+                      "runAfter": {},
+                      "else": {
+                        "actions": {
+                          "パラメータ「WebロールId(roleId)」、「アカウントId(accountId)」により、所属するユーザー一覧を取得する": {
+                            "runAfter": {},
+                            "metadata": {
+                              "operationMetadataId": "aaa57bb0-009e-467e-9abb-63da7350dc6d"
+                            },
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "host": {
+                                "connectionName": "shared_commondataserviceforapps_1",
+                                "operationId": "ListRecords",
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                              },
+                              "parameters": {
+                                "entityName": "tps_pageswebroru_mst_ibms",
+                                "fetchXml": "<!--\nCreated from query:\n\nSELECT TOP 50 tps_pageswebroru_mst_ibm.tps_pageswebroru_mst_ibmid,\n              tps_pageswebroru_mst_ibm.tps_webrorumei,\n              contact.contactid,\n              contact.fullname,\n              contact.emailaddress1,\n              contact.parentcustomerid\nFROM   tps_pageswebroru_mst_ibm\n       INNER JOIN\n       tps_pageswebroru_mst_ibm_contact AS contact_r\n       ON contact_r.tps_pageswebroru_mst_ibmid = tps_pageswebroru_mst_ibm.tps_pageswebroru_mst_ibmid\n       INNER JOIN\n       contact AS contact\n       ON contact.contactid = contact_r.contactid \n       And statecode = 0\n       INNER JOIN \n       account ON contact.parentcustomerid = account.accountid\n       And account.accountid = '53ad8a95-0f18-ef11-840a-6045bd6727d4'\n       And statecode = 0 \n       \nWHERE  tps_pageswebroru_mst_ibmid in ('75ca01f0-0227-ef11-840b-000d3a7894bd','5faf3d4c-c627-ef11-840a-00224866de73') and statecode=0;\n-->\n\n<fetch>\n  <entity name=\"tps_pageswebroru_mst_ibm\">\n    <attribute name=\"tps_pageswebroru_mst_ibmid\" />\n    <attribute name=\"tps_webrorumei\" />\n    <filter>\n      <condition attribute=\"tps_pageswebroru_mst_ibmid\" operator=\"in\">\n        @{concat('<value>',replace(trim(triggerBody()?['text_1']),',','</value> <value>'),'</value>')}\n      </condition>\n      <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n    </filter>\n    <link-entity name=\"tps_pageswebroru_mst_ibm_contact\" from=\"tps_pageswebroru_mst_ibmid\" to=\"tps_pageswebroru_mst_ibmid\" link-type=\"inner\" alias=\"contact_r\" intersect=\"true\">\n      <link-entity name=\"contact\" from=\"contactid\" to=\"contactid\" alias=\"contact\" intersect=\"true\">\n        <attribute name=\"contactid\" />\n        <attribute name=\"fullname\" />\n        <attribute name=\"emailaddress1\" />\n        <filter>\n          <condition attribute=\"tps_shoninsutetasu\" operator=\"eq\" value=\"2\" />\n          <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n        </filter>\n        <link-entity name=\"account\" from=\"accountid\" to=\"parentcustomerid\" alias=\"account_r\">\n          <attribute name=\"accountid\" />\n          <filter>\n            <condition attribute=\"accountid\" operator=\"eq\" value=\"@{triggerBody()?['text_2']}\" alias=\"account\"  />\n            <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n          </filter>\n        </link-entity>\n      </link-entity>\n    </link-entity>\n  </entity>\n</fetch>"
+                              },
+                              "authentication": "@parameters('$authentication')"
+                            }
+                          },
+                          "配列作成-userList-roleId-accountId": {
+                            "runAfter": {
+                              "パラメータ「WebロールId(roleId)」、「アカウントId(accountId)」により、所属するユーザー一覧を取得する": [
+                                "Succeeded"
+                              ]
+                            },
+                            "metadata": {
+                              "operationMetadataId": "3b1b6ce5-1bcc-43fc-87c3-712b9f563daa"
+                            },
+                            "type": "Select",
+                            "inputs": {
+                              "from": "@outputs('パラメータ「WebロールId(roleId)」、「アカウントId(accountId)」により、所属するユーザー一覧を取得する')?['body/value']",
+                              "select": {
+                                "contactid": "@item()?['contact.contactid']",
+                                "fullname": "@item()?['contact.fullname']",
+                                "emailaddress": "@item()?['contact.emailaddress1']",
+                                "tps_pageswebroru_mst_ibmid": "@item()?['tps_pageswebroru_mst_ibmid']",
+                                "tps_webrorumei": "@item()?['tps_webrorumei']",
+                                "accountId": "@item()?['account_r.accountId']"
+                              }
+                            }
+                          },
+                          "変数の設定-userList-roleId-accoundId": {
+                            "runAfter": {
+                              "配列作成-userList-roleId-accountId": [
+                                "Succeeded"
+                              ]
+                            },
+                            "metadata": {
+                              "operationMetadataId": "7548c038-9436-42e4-937a-ac7e8d2dc8ea"
+                            },
+                            "type": "SetVariable",
+                            "inputs": {
+                              "name": "userList",
+                              "value": "@body('配列作成-userList-roleId-accountId')"
+                            }
+                          }
+                        }
+                      },
+                      "expression": {
+                        "equals": [
+                          "@empty(triggerBody()?['text_2'])",
+                          true
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "0e8de3e2-5f5f-431e-9ebc-5348457af14d"
+                      },
+                      "type": "If"
+                    }
+                  },
+                  "runAfter": {},
+                  "else": {
+                    "actions": {
+                      "パラメータ「ユーザーId(userId)」により、所有するWEBロール一覧に所属ユーザー一覧を取得する": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "aaa57bb0-009e-467e-9abb-63da7350dc6d"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps_1",
+                            "operationId": "ListRecords",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "contacts",
+                            "fetchXml": "<!--\nCreated from query:\n\nSELECT    tps_pageswebroru_mst_ibm_contact.tps_webrorumei,\n          tps_pageswebroru_mst_ibm_contact.tps_pageswebroru_mst_ibmid,\n          tps_pageswebroru_mst_ibm_contact.contactid,\n          tps_pageswebroru_mst_ibm_contact.fullname,\n          tps_pageswebroru_mst_ibm_contact.emailaddress1,\n          contact.contactid,\n          contact.fullname,\n          contact.emailaddress1\nFROM   contact\n       INNER JOIN\n       tps_pageswebroru_mst_ibm_contact AS tps_pageswebroru_mst_ibm_contact\n       ON tps_pageswebroru_mst_ibm_contact.contactid = contact.contactid\n       INNER JOIN\n       tps_pageswebroru_mst_ibm AS tps_pageswebroru_mst_ibm\n       ON tps_pageswebroru_mst_ibm.tps_pageswebroru_mst_ibmid = tps_pageswebroru_mst_ibm_contact.tps_pageswebroru_mst_ibmid\n          AND tps_pageswebroru_mst_ibm.statecode = 0\n       INNER JOIN\n       tps_pageswebroru_mst_ibm_contact AS tps_pageswebroru_mst_ibm_contact\n       ON tps_pageswebroru_mst_ibm_contact.tps_pageswebroru_mst_ibmid = tps_pageswebroru_mst_ibm.tps_pageswebroru_mst_ibmid\n       INNER JOIN\n       contact AS contact\n       ON contact.contactid = tps_pageswebroru_mst_ibm_contact.contactid\n          AND contact.tps_shoninsutetasu= 2\n          AND contact.statecode = 0\nWHERE  (contactid = '4d224d23-e917-ef11-840a-002248697aed'\n        AND tps_shoninsutetasu = 2\n        AND statecode = 0);\n-->\n\n<fetch>\n  <entity name=\"contact\">\n    <filter>\n      <condition attribute=\"contactid\" operator=\"in\">\n        @{concat('<value>', replace(trim(triggerBody()?['text']), ',', '</value> <value>'), '</value>')}\n      </condition>\n      <condition attribute=\"tps_shoninsutetasu\" operator=\"eq\" value=\"2\" />\n      <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n    </filter>\n    <link-entity name=\"tps_pageswebroru_mst_ibm_contact\" from=\"contactid\" to=\"contactid\" intersect=\"true\">\n      <link-entity name=\"tps_pageswebroru_mst_ibm\" from=\"tps_pageswebroru_mst_ibmid\" to=\"tps_pageswebroru_mst_ibmid\" alias=\"tps_pageswebroru_mst_ibm\" intersect=\"true\">\n        <attribute name=\"tps_webrorumei\" />\n        <attribute name=\"tps_pageswebroru_mst_ibmid\" />\n        <filter>\n          <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n        </filter>\n        <link-entity name=\"tps_pageswebroru_mst_ibm_contact\" from=\"tps_pageswebroru_mst_ibmid\" to=\"tps_pageswebroru_mst_ibmid\" intersect=\"true\">\n          <link-entity name=\"contact\" from=\"contactid\" to=\"contactid\" alias=\"contact\" intersect=\"true\">\n            <attribute name=\"contactid\" />\n            <attribute name=\"fullname\" />\n            <attribute name=\"emailaddress1\" />\n            <filter>\n              <condition attribute=\"tps_shoninsutetasu\" operator=\"eq\" value=\"2\" />\n              <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n            </filter>\n          </link-entity>\n        </link-entity>\n      </link-entity>\n    </link-entity>\n  </entity>\n</fetch>"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      },
+                      "配列作成-userList-userId": {
+                        "runAfter": {
+                          "パラメータ「ユーザーId(userId)」により、所有するWEBロール一覧に所属ユーザー一覧を取得する": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "8f2b6b56-6196-41ce-bef5-b58bbcf4132b"
+                        },
+                        "type": "Select",
+                        "inputs": {
+                          "from": "@outputs('パラメータ「ユーザーId(userId)」により、所有するWEBロール一覧に所属ユーザー一覧を取得する')?['body/value']",
+                          "select": {
+                            "tps_pageswebroru_mst_ibmid": "@item()?['tps_pageswebroru_mst_ibm.tps_pageswebroru_mst_ibmid']",
+                            "tps_webrorumei": "@item()?['tps_pageswebroru_mst_ibm.tps_webrorumei']",
+                            "contactid": "@item()?['contact.contactid']",
+                            "fullname": "@item()?['contact.fullname']",
+                            "emailaddress": "@item()?['contact.emailaddress1']"
+                          }
+                        }
+                      },
+                      "変数の設定-userList-userId": {
+                        "runAfter": {
+                          "重複排除-userList-userId": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "91468e76-3212-4875-ab68-7c6a92bdd07d"
+                        },
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "userList",
+                          "value": "@outputs('重複排除-userList-userId')"
+                        }
+                      },
+                      "重複排除-userList-userId": {
+                        "runAfter": {
+                          "配列作成-userList-userId": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "22e8133c-7e1a-4bf1-9e13-f2c4cbba81ae"
+                        },
+                        "type": "Compose",
+                        "inputs": "@union(body('配列作成-userList-userId'),body('配列作成-userList-userId'))"
+                      }
+                    }
+                  },
+                  "expression": {
+                    "equals": [
+                      "@empty(triggerBody()?['text_1'])",
+                      false
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "06f51644-eece-405a-822e-7536099c5945"
+                  },
+                  "type": "If"
+                }
+              },
+              "runAfter": {},
+              "expression": {
+                "or": [
+                  {
+                    "not": {
+                      "equals": [
+                        "@empty(triggerBody()?['text'])",
+                        true
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "equals": [
+                        "@empty(triggerBody()?['text_1'])",
+                        true
+                      ]
+                    }
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "19cfe069-0bbb-4891-9029-5ad5e1eab7be"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "変数を初期化する-userList": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6e076e4a-9cc8-409c-b2d9-493482d69a86"
+          },
+          "type": "Scope"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

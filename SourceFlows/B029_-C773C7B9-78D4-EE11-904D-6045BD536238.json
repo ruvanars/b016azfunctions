@@ -1,0 +1,385 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "tps_dataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "f94a0af1-3f97-4f97-ba65-27aedb83be42"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "teamId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "入力を指定してください",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "userId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "入力を指定してください",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "変数を初期化する-memberList": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "10b02df1-8fe3-4761-9985-e65cf4becd23"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "memberList",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "try": {
+          "actions": {
+            "パラメータ「チームID(teamId)」と「ユーザID(userId)」のいずれか値があるかを判断": {
+              "actions": {
+                "パラメータ「チームID(teamId)」の値が空かどうかを判定": {
+                  "actions": {
+                    "パラメータ「ユーザーId(userId)」により、チームの一覧を取得する": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "26f77a36-5eca-4246-a155-37f412c3e6c0"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps_1",
+                          "operationId": "ListRecords",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "parameters": {
+                          "entityName": "teams",
+                          "fetchXml": "<!--\nCreated from query:\n\nselect\nsystemuser.systemuserid,\nsystemuser.fullname,\nsystemuser.internalemailaddress,\nteam.teamid,\nteam.name\nfrom\nteam\ninner join teammembership teammembership1 ON team.teamid = teammembership1.teamid\ninner join teammembership teammembership2 ON teammembership1.teamid = teammembership2.teamid\ninner join systemuser ON teammembership2.systemuserid = systemuser.systemuserid\nwhere\nteam.isdefault = 0\nand team.teamtype = 0\nand teammembership1.systemuserid = '8124c8bd-a0c4-ee11-9079-6045bd536271'\nand systemuser.isdisabled = 0\n\n-->\n\n\n<fetch xmlns:generator='MarkMpn.SQL4CDS'>\n  <entity name='team'>\n    <attribute name='teamid' />\n    <attribute name='name' />\n    <link-entity name='teammembership' to='teamid' from='teamid' alias='teammembership' link-type='inner'>\n      <link-entity name='teammembership' to='teamid' from='teamid' alias='teammembership2' link-type='inner'>\n        <link-entity name='systemuser' to='systemuserid' from='systemuserid' alias='systemuser' link-type='inner'>\n          <attribute name='systemuserid' />\n          <attribute name='fullname' />\n          <attribute name='internalemailaddress' />\n          <filter>\n            <condition attribute='isdisabled' operator='eq' value='0' />\n          </filter>\n        </link-entity>\n      </link-entity>\n      <filter>\n        <condition attribute='systemuserid' operator='in'>\n          @{concat('<value>',replace(trim(triggerBody()?['text_1']),',','</value> <value>'),'</value>')}\n        </condition>\n      </filter>\n    </link-entity>\n    <filter>\n      <condition attribute='teamtype' operator='eq' value='0' />\n      <condition attribute='isdefault' operator='eq' value='0' />\n    </filter>\n  </entity>\n</fetch>"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "配列作成-memberList-userId": {
+                      "runAfter": {
+                        "パラメータ「ユーザーId(userId)」により、チームの一覧を取得する": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "f65774fe-4fb6-4f06-9a4f-5c6b6aa4ebba"
+                      },
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@outputs('パラメータ「ユーザーId(userId)」により、チームの一覧を取得する')?['body/value']",
+                        "select": {
+                          "memberId": "@item()?['systemuser.systemuserid']",
+                          "teamId": "@item()?['teamid']",
+                          "memberName": "@item()?['systemuser.fullname']",
+                          "memberMail": "@item()?['systemuser.internalemailaddress']",
+                          "teamName": "@item()?['name']"
+                        }
+                      }
+                    },
+                    "変数の設定-memberList-userId": {
+                      "runAfter": {
+                        "重複排除-memberList-userId": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "313db954-ecb5-4842-97e8-2b81f55f08bf"
+                      },
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "memberList",
+                        "value": "@outputs('重複排除-memberList-userId')"
+                      }
+                    },
+                    "重複排除-memberList-userId": {
+                      "runAfter": {
+                        "配列作成-memberList-userId": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "00a169eb-1da2-4887-aa12-f13900eac74f"
+                      },
+                      "type": "Compose",
+                      "inputs": "@union(body('配列作成-memberList-userId'),body('配列作成-memberList-userId'))"
+                    }
+                  },
+                  "runAfter": {},
+                  "else": {
+                    "actions": {
+                      "パラメータ「チームID(teamId)」により、チームの一覧を取得する": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "b3a45447-4b90-4f39-bedb-186534980f9a"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps_1",
+                            "operationId": "ListRecords",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "teams",
+                            "fetchXml": "<!--\nCreated from query:\n\nselect\nsystemuser.systemuserid,\nsystemuser.fullname,\nsystemuser.internalemailaddress,\nteam.teamid,\nteam.name\nfrom\nteam\ninner join teammembership ON team.teamid = teammembership.teamid\ninner join systemuser ON teammembership.systemuserid = systemuser.systemuserid\nwhere\nteam.name In ('権限テスト_WZT','信託年金サポート部（東京）','信託年金営業部（大阪）')\nand systemuser.isdisabled = 0\n\n-->\n\n\n<fetch xmlns:generator='MarkMpn.SQL4CDS'>\n  <entity name='team'>\n    <attribute name='teamid' />\n    <attribute name='name' />\n    <link-entity name='teammembership' to='teamid' from='teamid' alias='teammembership' link-type='inner'>\n      <attribute name='teamid' />\n      <link-entity name='systemuser' to='systemuserid' from='systemuserid' alias='systemuser' link-type='inner'>\n        <attribute name='systemuserid' />\n        <attribute name='fullname' />\n        <attribute name='internalemailaddress' />\n        <filter>\n          <condition attribute='isdisabled' operator='eq' value='0' />\n        </filter>\n      </link-entity>\n    </link-entity>\n    <filter>\n      <condition attribute='teamtype' operator='eq' value='0' />\n      <condition attribute='isdefault' operator='eq' value='0' />\n      <condition attribute='teamid' operator='in'>\n        @{concat('<value>',replace(trim(triggerBody()?['text']),',','</value> <value>'),'</value>')}\n      </condition>\n    </filter>\n  </entity>\n</fetch>"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      },
+                      "配列作成-memberList-teamId": {
+                        "runAfter": {
+                          "パラメータ「チームID(teamId)」により、チームの一覧を取得する": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "0f5ac0fe-babe-4153-b996-c2b00e41c838"
+                        },
+                        "type": "Select",
+                        "inputs": {
+                          "from": "@outputs('パラメータ「チームID(teamId)」により、チームの一覧を取得する')?['body/value']",
+                          "select": {
+                            "memberId": "@item()?['systemuser.systemuserid']",
+                            "teamId": "@item()?['teamid']",
+                            "memberName": "@item()?['systemuser.fullname']",
+                            "memberMail": "@item()?['systemuser.internalemailaddress']",
+                            "teamName": "@item()?['name']"
+                          }
+                        }
+                      },
+                      "変数の設定-memberList-teamId": {
+                        "runAfter": {
+                          "配列作成-memberList-teamId": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "d0747d7d-5e87-48eb-ae38-2dd7cd64dab5"
+                        },
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "memberList",
+                          "value": "@body('配列作成-memberList-teamId')"
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "equals": [
+                      "@empty(triggerBody()?['text'])",
+                      true
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "bbccc2a3-70c6-461c-b8d3-6940cb56b04d"
+                  },
+                  "type": "If"
+                }
+              },
+              "runAfter": {},
+              "expression": {
+                "or": [
+                  {
+                    "not": {
+                      "equals": [
+                        "@empty(triggerBody()?['text'])",
+                        true
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "equals": [
+                        "@empty(triggerBody()?['text_1'])",
+                        true
+                      ]
+                    }
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "1c492c49-09bd-4669-b002-a4c5b36d589d"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "変数を初期化する-memberList": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "74d9f313-2c74-4413-b46a-21ad3d0e8efe"
+          },
+          "type": "Scope"
+        },
+        "正常応答": {
+          "runAfter": {
+            "try": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f89c2f6c-4887-4d63-9a45-86b300f77b8b"
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 200,
+            "body": "@variables('memberList')",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "memberId": {
+                    "type": "string"
+                  },
+                  "teamId": {
+                    "type": "string"
+                  },
+                  "memberName": {
+                    "type": "string"
+                  },
+                  "memberMail": {
+                    "type": "string"
+                  },
+                  "teamName": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "memberId",
+                  "teamId",
+                  "memberName",
+                  "memberMail",
+                  "teamName"
+                ]
+              }
+            }
+          }
+        },
+        "異常終了": {
+          "runAfter": {
+            "異常応答": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "43657d02-97b1-4cd6-a85d-e95359ec2c68"
+          },
+          "type": "Terminate",
+          "inputs": {
+            "runStatus": "Failed"
+          }
+        },
+        "正常終了": {
+          "runAfter": {
+            "正常応答": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a9dfa4b5-e8b5-4d50-81c6-ca293c4a9a13"
+          },
+          "type": "Terminate",
+          "inputs": {
+            "runStatus": "Succeeded"
+          }
+        },
+        "異常応答": {
+          "runAfter": {
+            "エラーメッセージを取得する": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e58748e7-0e5e-4a1e-893c-4cafcb709427"
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 400,
+            "body": {
+              "フロー名": "@{workflow()?['tags']?['flowDisplayName']}",
+              "エラーメッセージ": "@{first(body('エラーメッセージを取得する'))?['error']?['message']}"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "フロー名": {
+                  "title": "フロー名",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                },
+                "エラーメッセージ": {
+                  "title": "エラーメッセージ",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "エラーメッセージを取得する": {
+          "runAfter": {
+            "try": [
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d9acde76-0ab7-45c7-b99a-ab422890c96c"
+          },
+          "type": "Query",
+          "inputs": {
+            "from": "@result('try')",
+            "where": "@equals(item()?['status'], 'Failed')"
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}
