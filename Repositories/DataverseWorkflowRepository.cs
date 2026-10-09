@@ -5,6 +5,7 @@ using WorkflowNavigationFunction.Models;
 
 namespace WorkflowNavigationFunction.Repositories;
 
+
 public sealed class DataverseWorkflowRepository(IDataverseClient client, IExecutionTrace trace) : IWorkflowRepository
 {
     private const string Cases = "tps_ankenkanri_trn_ibms";
